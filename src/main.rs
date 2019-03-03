@@ -11,7 +11,8 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate simple_logger;
 
-use image::{GenericImageView, ImageError, JPEG};
+use image::{ImageOutputFormat, GenericImageView, ImageError};
+
 use rayon::prelude::*;
 use s3::bucket::Bucket;
 use s3::credentials::Credentials;
@@ -117,7 +118,7 @@ fn resize_image(img: &image::DynamicImage, new_w: &f32) -> Result<Vec<u8>, Image
     let new_h = (old_h * ratio).floor();
 
     let scaled = img.resize(*new_w as u32, new_h as u32, image::FilterType::Lanczos3);
-    scaled.write_to(&mut result, JPEG)?;
+    scaled.write_to(&mut result, ImageOutputFormat::JPEG(90))?;
 
     Ok(result)
 }
