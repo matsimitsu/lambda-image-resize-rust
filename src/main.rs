@@ -48,16 +48,14 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<ApiGatewayProxyRes
 
     let api_event: ApiGatewayProxyRequest = serde_json::from_value(event).map_err(|e| ctx.new_error(e.to_string().as_str()))?;
 
-    let bucket = api_event.query_string_parameters.get(BUCKET_KEY).unwrap_or_else(|| panic!("Missing bucket"));
-    let file_key = api_event.query_string_parameters.get(FILE_PATH_KEY).unwrap_or_else(|| panic!("Missing file key"));
-    let region = api_event.query_string_parameters.get(REGION_KEY).unwrap_or_else(|| panic!("Missing region"));
-    let size = api_event.query_string_parameters.get(SIZE_KEY).unwrap_or_else(|| panic!("Missing size"));
+    let source_url = api_event.headers.get(SOURCE_HEADER).unwrap_or_else(|| panic!("Missing source url"));
+    let dest_url = api_event.headers.get(DEST_HEADER).unwrap_or_else(|| panic!("Missing destination url"));
 
-    info!("Bucket: {}, key: {}, region: {}", &bucket, &file_key, &region);
+    info!("Bucket: {}, key: {}, region: {}", &source_url, &dest_url, &region);
     let resized_file_key = handle_request(
         &config,
-        bucket.to_string(),
-        file_key.to_string(),
+        source_url.to_string(),
+        dest_url.to_string(),
         region.to_string(),
         size.to_string()
     );
