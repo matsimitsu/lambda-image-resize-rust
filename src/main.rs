@@ -27,6 +27,7 @@ use std::error::Error;
 use aws_lambda_events::event::apigw::ApiGatewayProxyRequest;
 use aws_lambda_events::event::apigw::ApiGatewayProxyResponse;
 use std::collections::HashMap;
+use std::io::Read;
 
 
 const SIZE_KEY: &'static str = "size";
@@ -73,11 +74,8 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<ApiGatewayProxyRes
 fn handle_request(config: &Config, source_url: String, dest_url: String, size_as_string: String) -> String {
     let size = size_as_string.parse::<f32>().unwrap();
 
-
-    let (data, _) = bucket
-        .get(&dest_url)
-        .expect(&format!("Could not get object: {}", &dest_url));
-
+    let mut source_response = reqwest::get(source_url).expect("Failed to download source image");
+    let source_size = source_response.read(data).unwrap();
     let img = image::load_from_memory(&data)
         .ok()
         .expect("Opening image failed");
@@ -89,9 +87,9 @@ fn handle_request(config: &Config, source_url: String, dest_url: String, size_as
 
     target = format!("{t}-resize-{s}", t=target, s=size);
 
-    let (_, code) = bucket
-        .put(&target, &buffer, "image/jpeg")
-        .expect(&format!("Could not upload object to :{}", &target));
+//    let (_, code) = bucket
+//        .put(&target, &buffer, "image/jpeg")
+//        .expect(&format!("Could not upload object to :{}", &target));
     info!("Uploaded: {} with: {}", &target, &code);
     return target;
 }
