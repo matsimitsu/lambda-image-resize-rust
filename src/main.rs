@@ -26,10 +26,10 @@ use serde_json::Value;
 use std::error::Error;
 use aws_lambda_events::event::apigw::ApiGatewayProxyRequest;
 
-static BUCKET_KEY: &'static str = "bucket";
-static FILE_PATH_KEY: &'static str = "key";
-static REGION_KEY: &'static str = "region";
-static SIZE_KEY: &'static str = "size";
+const BUCKET_KEY: &'static str = "bucket";
+const FILE_PATH_KEY: &'static str = "key";
+const REGION_KEY: &'static str = "region";
+const SIZE_KEY: &'static str = "size";
 
 fn main() -> Result<(), Box<Error>> {
     simple_logger::init_with_level(log::Level::Info)?;
@@ -44,12 +44,13 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
 
     let api_event: ApiGatewayProxyRequest = serde_json::from_value(event).map_err(|e| ctx.new_error(e.to_string().as_str()))?;
 
-    let bucket = api_event.query_string_parameters.get(BUCKET_KEY).unwrap();
-    let file_path = api_event.query_string_parameters.get(FILE_PATH_KEY).unwrap();
-    let region = api_event.query_string_parameters.get(REGION_KEY).unwrap();
-    let size = api_event.query_string_parameters.get(SIZE_KEY).unwrap();
-    info!("Bucket: {}, key: {}, region: {}", &bucket, &file_path, &region);
-    handle_request(&config, bucket.to_string(), file_path.to_string(), region.to_string(), size.to_string());
+    let bucket = api_event.query_string_parameters.get(BUCKET_KEY).unwrap_or_else(|| panic!("Missing bucket"));
+    let file_key = api_event.query_string_parameters.get(FILE_PATH_KEY).unwrap_or_else(|| panic!("Missing file key"));
+    let region = api_event.query_string_parameters.get(REGION_KEY).unwrap_or_else(|| panic!("Missing region"));
+    let size = api_event.query_string_parameters.get(SIZE_KEY).unwrap_or_else(panic!("Missing size"));
+
+    info!("Bucket: {}, key: {}, region: {}", &bucket, &file_key, &region);
+    handle_request(&config, bucket.to_string(), file_key.to_string(), region.to_string(), size.to_string());
     Ok(())
 }
 
@@ -57,6 +58,7 @@ fn handle_request(config: &Config, bucket_name: String, file_path: String, regio
     let credentials = Credentials::default();
     let region: Region = region_name.parse().unwrap();
     let bucket = Bucket::new(&bucket_name, region, credentials);
+    info!("Successfully authenticated");
 
 //    let actual_size = check_size(size, &config);
 
