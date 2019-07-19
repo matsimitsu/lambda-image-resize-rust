@@ -32,6 +32,10 @@ const FILE_PATH_KEY: &'static str = "key";
 const REGION_KEY: &'static str = "region";
 const SIZE_KEY: &'static str = "size";
 
+const SOURCE_HEADER: &'static str = "source-url";
+const DEST_HEADER: &'static str = "destination-url";
+
+
 fn main() -> Result<(), Box<Error>> {
     simple_logger::init_with_level(log::Level::Info)?;
 
