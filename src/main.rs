@@ -92,8 +92,6 @@ fn handle_request(config: &Config, source_url: String, dest_url: String, size_as
     } else {
         panic!("Failed to upload to destination");
     }
-
-
 }
 
 fn resize_image(img: &image::DynamicImage, new_w: &f32) -> Result<Vec<u8>, ImageError> {
