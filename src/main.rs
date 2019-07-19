@@ -47,7 +47,7 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
     let bucket = api_event.query_string_parameters.get(BUCKET_KEY).unwrap_or_else(|| panic!("Missing bucket"));
     let file_key = api_event.query_string_parameters.get(FILE_PATH_KEY).unwrap_or_else(|| panic!("Missing file key"));
     let region = api_event.query_string_parameters.get(REGION_KEY).unwrap_or_else(|| panic!("Missing region"));
-    let size = api_event.query_string_parameters.get(SIZE_KEY).unwrap_or_else(panic!("Missing size"));
+    let size = api_event.query_string_parameters.get(SIZE_KEY).unwrap_or_else(|| panic!("Missing size"));
 
     info!("Bucket: {}, key: {}, region: {}", &bucket, &file_key, &region);
     handle_request(&config, bucket.to_string(), file_key.to_string(), region.to_string(), size.to_string());
