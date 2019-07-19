@@ -25,6 +25,10 @@ use config::Config;
 use lambda::error::HandlerError;
 use serde_json::Value;
 use std::error::Error;
+use aws_lambda_events::event::apigw::ApiGatewayProxyRequest;
+
+static BUCKET_KEY: &'static str = "bucket";
+static FILE_PATH_KEY: &'static str = "key";
 
 fn main() -> Result<(), Box<Error>> {
     simple_logger::init_with_level(log::Level::Info)?;
@@ -37,8 +41,9 @@ fn main() -> Result<(), Box<Error>> {
 fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> {
     let config = Config::new();
 
-    let s3_event: S3Event =
-        serde_json::from_value(event).map_err(|e| ctx.new_error(e.to_string().as_str()))?;
+    let api_event: ApiGatewayProxyRequest = serde_json::from_value(event).map_err(|e| ctx.new_error(e.to_string().as_str()))?;
+
+    api_event.query_string_parameters
 
     for record in s3_event.records {
         handle_record(&config, record);
