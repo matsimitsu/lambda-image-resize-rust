@@ -33,12 +33,12 @@ const SIZE_KEY: &'static str = "size";
 fn main() -> Result<(), Box<Error>> {
     simple_logger::init_with_level(log::Level::Info)?;
 
-    lambda!(handle_event);
+    let key = lambda!(handle_event);
 
-    Ok(())
+    Ok(key)
 }
 
-fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> {
+fn handle_event(event: Value, ctx: lambda::Context) -> Result<String, HandlerError> {
     let config = Config::new();
 
     let api_event: ApiGatewayProxyRequest = serde_json::from_value(event).map_err(|e| ctx.new_error(e.to_string().as_str()))?;
@@ -57,7 +57,7 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
         size.to_string()
     );
 
-    Ok(())
+    Ok(resized_file_key)
 }
 
 fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size_as_string: String) -> String {
