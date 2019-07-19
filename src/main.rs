@@ -30,6 +30,7 @@ use aws_lambda_events::event::apigw::ApiGatewayProxyRequest;
 static BUCKET_KEY: &'static str = "bucket";
 static FILE_PATH_KEY: &'static str = "key";
 static REGION_KEY: &'static str = "region";
+static SIZE_KEY: &'static str = "size";
 
 fn main() -> Result<(), Box<Error>> {
     simple_logger::init_with_level(log::Level::Info)?;
@@ -47,34 +48,23 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
     let bucket = api_event.query_string_parameters.get(BUCKET_KEY).ok_or_else(ctx.new_error("NO bucket provided"));
     let file_path = api_event.query_string_parameters.get(FILE_PATH_KEY).ok_or_else(ctx.new_error("NO file key provided"));
     let region = api_event.query_string_parameters.get(REGION_KEY).ok_or_else(ctx.new_error("NO region provided"));
-
+    let size = api_event.query_string_parameters.get(SIZE_KEY).ok_or_else(ctx.new_error("NO size provided"));
+    info!("Bucket: {}, key: {}, region: {}", &bucket, &file_path, &region);
+    handle_request(&config, bucket, file_path, region, size);
     Ok(())
 }
 
-fn handle_record(config: &Config, record: S3EventRecord) {
+fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size: String) {
     let credentials = Credentials::default();
-    let region: Region = record
-        .aws_region
-        .expect("Could not get region from record")
-        .parse()
-        .expect("Could not parse region from record");
-    let bucket = Bucket::new(
-        &record
-            .s3
-            .bucket
-            .name
-            .expect("Could not get bucket name from record"),
-        region,
-        credentials,
-    );
-    let source = record
-        .s3
-        .object
-        .key
-        .expect("Could not get key from object record");
-    info!("Fetching: {}, config: {:?}", &source, &config);
+    let region: Region = region_name.parse().unwrap();
+    let bucket = Bucket::new(bucket_name.parse(), region, credentials);
 
-    /* Make sure we don't process files twice */
+    if !check_size(size, &config) {
+
+    }
+}
+
+fn check_size(size: String, config: &Config) {
     for size in &config.sizes {
         let to_match = format!("-resize-{}", size);
         if source.ends_with(&to_match) {
@@ -86,6 +76,9 @@ fn handle_record(config: &Config, record: S3EventRecord) {
             return;
         }
     }
+}
+
+fn handle_record(config: &Config, record: S3EventRecord) {
 
     let (data, _) = bucket
         .get(&source)
