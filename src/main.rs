@@ -59,24 +59,42 @@ fn handle_request(config: &Config, bucket_name: String, file_path: String, regio
     let region: Region = region_name.parse().unwrap();
     let bucket = Bucket::new(bucket_name.parse(), region, credentials);
 
-    if !check_size(size, &config) {
+//    let actual_size = check_size(size, &config);
 
-    }
+    let (data, _) = bucket
+        .get(&file_path)
+        .expect(&format!("Could not get object: {}", &file_path));
+
+    let img = image::load_from_memory(&data)
+        .ok()
+        .expect("Opening image failed");
+
+    let _: Vec<_> = config
+        .sizes
+        .par_iter()
+        .map(|size| {
+            let buffer = resize_image(&img, &size).expect("Could not resize image");
+
+            let mut target = source.clone();
+            for (rep_key, rep_val) in &config.replacements {
+                target = target.replace(rep_key, rep_val);
+            }
+            target = format!("{t}-resize-{s}", t=target, s=size);
+            let (_, code) = bucket
+                .put(&target, &buffer, "image/jpeg")
+                .expect(&format!("Could not upload object to :{}", &target));
+            info!("Uploaded: {} with: {}", &target, &code);
+        })
+        .collect();
 }
 
-fn check_size(size: String, config: &Config) {
-    for size in &config.sizes {
-        let to_match = format!("-resize-{}", size);
-        if source.ends_with(&to_match) {
-            warn!(
-                "Source: '{}' ends with: '{}'. Skipping.",
-                &source,
-                &to_match
-            );
-            return;
-        }
-    }
-}
+//fn check_size(required_size: String, config: &Config) -> f32 {
+//    for allowed_size in &config.sizes {
+//        if format!("{}", allowed_size).eq(required_size) {
+//           return allowed_size.;
+//        }
+//    }
+//}
 
 fn handle_record(config: &Config, record: S3EventRecord) {
 
