@@ -113,11 +113,3 @@ fn resize_image(img: &image::DynamicImage, new_w: &f32) -> Result<Vec<u8>, Image
 
     Ok(result)
 }
-
-//fn check_size(required_size: String, config: &Config) -> f32 {
-//    for allowed_size in &config.sizes {
-//        if format!("{}", allowed_size).eq(required_size) {
-//           return allowed_size.;
-//        }
-//    }
-//}
