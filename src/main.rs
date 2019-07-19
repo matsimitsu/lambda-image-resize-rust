@@ -36,11 +36,10 @@ fn main() -> Result<(), Box<Error>> {
     simple_logger::init_with_level(log::Level::Info)?;
 
     let response = lambda!(handle_event);
-
     Ok(response)
 }
 
-fn handle_event(event: Value, ctx: lambda::Context) -> Result<String, HandlerError> {
+fn handle_event(event: Value, ctx: lambda::Context) -> Result<ApiGatewayProxyResponse, HandlerError> {
     let config = Config::new();
 
     let api_event: ApiGatewayProxyRequest = serde_json::from_value(event).map_err(|e| ctx.new_error(e.to_string().as_str()))?;
@@ -64,10 +63,10 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<String, HandlerErr
         headers: HashMap::new(),
         multi_value_headers:  HashMap::new(),
         is_base64_encoded: Option::from(false),
-        body: Option::from(format!("{{\"new_key\" : \"{k}\"}}", k=resized_file_key))
+        body: Option::from(resized_file_key)
     };
 
-    Ok(serde_json::to_string(&response).unwrap())
+   Ok(response)
 }
 
 fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size_as_string: String) -> String {
