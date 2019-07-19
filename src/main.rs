@@ -10,6 +10,7 @@ extern crate s3;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate simple_logger;
+extern crate reqwest;
 
 use image::{ImageOutputFormat, GenericImageView, ImageError};
 
@@ -27,9 +28,7 @@ use aws_lambda_events::event::apigw::ApiGatewayProxyRequest;
 use aws_lambda_events::event::apigw::ApiGatewayProxyResponse;
 use std::collections::HashMap;
 
-const BUCKET_KEY: &'static str = "bucket";
-const FILE_PATH_KEY: &'static str = "key";
-const REGION_KEY: &'static str = "region";
+
 const SIZE_KEY: &'static str = "size";
 
 const SOURCE_HEADER: &'static str = "source-url";
@@ -50,13 +49,13 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<ApiGatewayProxyRes
 
     let source_url = api_event.headers.get(SOURCE_HEADER).unwrap_or_else(|| panic!("Missing source url"));
     let dest_url = api_event.headers.get(DEST_HEADER).unwrap_or_else(|| panic!("Missing destination url"));
+    let size = api_event.query_string_parameters.get(SIZE_KEY).unwrap_or_else(|| panic!("Missing size"));
 
-    info!("Bucket: {}, key: {}, region: {}", &source_url, &dest_url, &region);
+    info!("source_url: {}, dest_url: {}, size: {}", &source_url, &dest_url, &size);
     let resized_file_key = handle_request(
         &config,
         source_url.to_string(),
         dest_url.to_string(),
-        region.to_string(),
         size.to_string()
     );
 
@@ -71,18 +70,13 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<ApiGatewayProxyRes
    Ok(response)
 }
 
-fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size_as_string: String) -> String {
+fn handle_request(config: &Config, source_url: String, dest_url: String, size_as_string: String) -> String {
     let size = size_as_string.parse::<f32>().unwrap();
-    let credentials = Credentials::default();
-    let region: Region = region_name.parse().unwrap();
-    let bucket = Bucket::new(&bucket_name, region, credentials);
-    info!("Successfully authenticated");
 
-//    let actual_size = check_size(size, &config);
 
     let (data, _) = bucket
-        .get(&file_path)
-        .expect(&format!("Could not get object: {}", &file_path));
+        .get(&dest_url)
+        .expect(&format!("Could not get object: {}", &dest_url));
 
     let img = image::load_from_memory(&data)
         .ok()
@@ -91,7 +85,7 @@ fn handle_request(config: &Config, bucket_name: String, file_path: String, regio
 
     let buffer = resize_image(&img, &size).expect("Could not resize image");
 
-    let mut target = file_path.clone();
+    let mut target = dest_url.clone();
 
     target = format!("{t}-resize-{s}", t=target, s=size);
 
