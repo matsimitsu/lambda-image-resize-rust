@@ -43,11 +43,9 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
 
     let api_event: ApiGatewayProxyRequest = serde_json::from_value(event).map_err(|e| ctx.new_error(e.to_string().as_str()))?;
 
-    api_event.query_string_parameters
+    let bucket = api_event.query_string_parameters.get(BUCKET_KEY).ok_or_else(ctx.new_error("NO bucket provided"));
+    let file_path = api_event.query_string_parameters.get(FILE_PATH_KEY).ok_or_else(ctx.new_error("NO file key provided"));
 
-    for record in s3_event.records {
-        handle_record(&config, record);
-    }
     Ok(())
 }
 
