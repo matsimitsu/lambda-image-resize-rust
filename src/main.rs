@@ -5,7 +5,6 @@ extern crate lambda_runtime as lambda;
 #[macro_use]
 extern crate log;
 extern crate rayon;
-extern crate s3;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
@@ -14,9 +13,6 @@ extern crate reqwest;
 
 use image::{ImageOutputFormat, GenericImageView, ImageError};
 
-use s3::bucket::Bucket;
-use s3::credentials::Credentials;
-use s3::region::Region;
 
 mod config;
 
