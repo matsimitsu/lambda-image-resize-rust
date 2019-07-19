@@ -88,43 +88,6 @@ fn handle_request(config: &Config, bucket_name: String, file_path: String, regio
         .collect();
 }
 
-//fn check_size(required_size: String, config: &Config) -> f32 {
-//    for allowed_size in &config.sizes {
-//        if format!("{}", allowed_size).eq(required_size) {
-//           return allowed_size.;
-//        }
-//    }
-//}
-
-fn handle_record(config: &Config, record: S3EventRecord) {
-
-    let (data, _) = bucket
-        .get(&source)
-        .expect(&format!("Could not get object: {}", &source));
-
-    let img = image::load_from_memory(&data)
-        .ok()
-        .expect("Opening image failed");
-
-    let _: Vec<_> = config
-        .sizes
-        .par_iter()
-        .map(|size| {
-            let buffer = resize_image(&img, &size).expect("Could not resize image");
-
-            let mut target = source.clone();
-            for (rep_key, rep_val) in &config.replacements {
-                target = target.replace(rep_key, rep_val);
-            }
-            target = format!("{t}-resize-{s}", t=target, s=size);
-            let (_, code) = bucket
-                .put(&target, &buffer, "image/jpeg")
-                .expect(&format!("Could not upload object to :{}", &target));
-            info!("Uploaded: {} with: {}", &target, &code);
-        })
-        .collect();
-}
-
 fn resize_image(img: &image::DynamicImage, new_w: &f32) -> Result<Vec<u8>, ImageError> {
     let mut result: Vec<u8> = Vec::new();
 
@@ -138,3 +101,11 @@ fn resize_image(img: &image::DynamicImage, new_w: &f32) -> Result<Vec<u8>, Image
 
     Ok(result)
 }
+
+//fn check_size(required_size: String, config: &Config) -> f32 {
+//    for allowed_size in &config.sizes {
+//        if format!("{}", allowed_size).eq(required_size) {
+//           return allowed_size.;
+//        }
+//    }
+//}
