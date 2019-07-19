@@ -24,6 +24,8 @@ use lambda::error::HandlerError;
 use serde_json::Value;
 use std::error::Error;
 use aws_lambda_events::event::apigw::ApiGatewayProxyRequest;
+use aws_lambda_events::event::apigw::ApiGatewayProxyResponse;
+use std::collections::HashMap;
 
 const BUCKET_KEY: &'static str = "bucket";
 const FILE_PATH_KEY: &'static str = "key";
@@ -33,9 +35,9 @@ const SIZE_KEY: &'static str = "size";
 fn main() -> Result<(), Box<Error>> {
     simple_logger::init_with_level(log::Level::Info)?;
 
-    let key = lambda!(handle_event);
+    let response = lambda!(handle_event);
 
-    Ok(key)
+    Ok(response)
 }
 
 fn handle_event(event: Value, ctx: lambda::Context) -> Result<String, HandlerError> {
@@ -57,7 +59,15 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<String, HandlerErr
         size.to_string()
     );
 
-    Ok(resized_file_key)
+    let response = ApiGatewayProxyResponse {
+        status_code: 200,
+        headers: HashMap::new(),
+        multi_value_headers:  HashMap::new(),
+        is_base64_encoded: Option::from(false),
+        body: Option::from(format!("{{\"new_key\" : \"{k}\"}}", k=resized_file_key))
+    };
+
+    Ok(serde_json::to_string(&response).unwrap())
 }
 
 fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size_as_string: String) -> String {
