@@ -49,7 +49,7 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<ApiGatewayProxyRes
     let size = api_event.query_string_parameters.get(SIZE_KEY).unwrap_or_else(|| panic!("Missing size"));
 
     info!("source_url: {}, dest_url: {}, size: {}", &source_url, &dest_url, &size);
-    let resized_file_key = handle_request(
+    let result = handle_request(
         &config,
         source_url.to_string(),
         dest_url.to_string(),
@@ -61,7 +61,7 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<ApiGatewayProxyRes
         headers: HashMap::new(),
         multi_value_headers:  HashMap::new(),
         is_base64_encoded: Option::from(false),
-        body: Option::from(resized_file_key)
+        body: Option::from(result)
     };
 
    Ok(response)
@@ -80,15 +80,11 @@ fn handle_request(config: &Config, source_url: String, dest_url: String, size_as
 
     let resized_image_buffer = resize_image(&img, &size).expect("Could not resize image");
 
-    let mut target = dest_url.clone();
-
-    target = format!("{t}-resize-{s}", t=target, s=size);
-
     let client = reqwest::Client::new();
     let response = client.put(dest_url.as_str()).body(resized_image_buffer).send();
 
     if response.is_ok() {
-        return target;
+        return "OK";
     } else {
         panic!("Failed to upload to destination");
     }
