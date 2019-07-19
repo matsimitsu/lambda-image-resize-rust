@@ -71,7 +71,7 @@ fn handle_record(config: &Config, record: S3EventRecord) {
 
     /* Make sure we don't process files twice */
     for size in &config.sizes {
-        let to_match = format!("-{}.jpg", size);
+        let to_match = format!("-resize-{}", size);
         if source.ends_with(&to_match) {
             warn!(
                 "Source: '{}' ends with: '{}'. Skipping.",
@@ -100,7 +100,7 @@ fn handle_record(config: &Config, record: S3EventRecord) {
             for (rep_key, rep_val) in &config.replacements {
                 target = target.replace(rep_key, rep_val);
             }
-            target = target.replace(".jpg", &format!("-{}.jpg", size));
+            target = format!("{t}-resize-{s}", t=target, s=size);
             let (_, code) = bucket
                 .put(&target, &buffer, "image/jpeg")
                 .expect(&format!("Could not upload object to :{}", &target));
