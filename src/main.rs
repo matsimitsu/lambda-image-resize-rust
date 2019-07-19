@@ -49,11 +49,18 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
     let size = api_event.query_string_parameters.get(SIZE_KEY).unwrap_or_else(|| panic!("Missing size"));
 
     info!("Bucket: {}, key: {}, region: {}", &bucket, &file_key, &region);
-    handle_request(&config, bucket.to_string(), file_key.to_string(), region.to_string(), size.to_string());
+    let resized_file_key = handle_request(
+        &config,
+        bucket.to_string(),
+        file_key.to_string(),
+        region.to_string(),
+        size.to_string()
+    );
+
     Ok(())
 }
 
-fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size_as_string: String) {
+fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size_as_string: String) -> String {
     let size = size_as_string.parse::<f32>().unwrap();
     let credentials = Credentials::default();
     let region: Region = region_name.parse().unwrap();
@@ -81,6 +88,7 @@ fn handle_request(config: &Config, bucket_name: String, file_path: String, regio
         .put(&target, &buffer, "image/jpeg")
         .expect(&format!("Could not upload object to :{}", &target));
     info!("Uploaded: {} with: {}", &target, &code);
+    return target;
 }
 
 fn resize_image(img: &image::DynamicImage, new_w: &f32) -> Result<Vec<u8>, ImageError> {
