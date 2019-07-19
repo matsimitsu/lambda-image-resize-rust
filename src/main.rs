@@ -84,7 +84,7 @@ fn handle_request(config: &Config, source_url: String, dest_url: String, size_as
     let response = client.put(dest_url.as_str()).body(resized_image_buffer).send();
 
     if response.is_ok() {
-        return "OK";
+        return "OK".to_string();
     } else {
         panic!("Failed to upload to destination");
     }
