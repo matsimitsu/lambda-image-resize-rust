@@ -20,7 +20,6 @@ use s3::region::Region;
 
 mod config;
 
-use aws_lambda_events::event::s3::{S3Event, S3EventRecord};
 use config::Config;
 use lambda::error::HandlerError;
 use serde_json::Value;
@@ -45,12 +44,12 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
 
     let api_event: ApiGatewayProxyRequest = serde_json::from_value(event).map_err(|e| ctx.new_error(e.to_string().as_str()))?;
 
-    let bucket = api_event.query_string_parameters.get(BUCKET_KEY).ok_or_else(ctx.new_error("NO bucket provided"));
-    let file_path = api_event.query_string_parameters.get(FILE_PATH_KEY).ok_or_else(ctx.new_error("NO file key provided"));
-    let region = api_event.query_string_parameters.get(REGION_KEY).ok_or_else(ctx.new_error("NO region provided"));
-    let size = api_event.query_string_parameters.get(SIZE_KEY).ok_or_else(ctx.new_error("NO size provided"));
+    let bucket = api_event.query_string_parameters.get(BUCKET_KEY).unwrap();
+    let file_path = api_event.query_string_parameters.get(FILE_PATH_KEY).unwrap();
+    let region = api_event.query_string_parameters.get(REGION_KEY).unwrap();
+    let size = api_event.query_string_parameters.get(SIZE_KEY).unwrap();
     info!("Bucket: {}, key: {}, region: {}", &bucket, &file_path, &region);
-    handle_request(&config, bucket, file_path, region, size);
+    handle_request(&config, bucket.to_string(), file_path.to_string(), region.to_string(), size.to_string());
     Ok(())
 }
 
