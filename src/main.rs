@@ -13,7 +13,6 @@ extern crate simple_logger;
 
 use image::{ImageOutputFormat, GenericImageView, ImageError};
 
-use rayon::prelude::*;
 use s3::bucket::Bucket;
 use s3::credentials::Credentials;
 use s3::region::Region;
@@ -55,7 +54,7 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
 }
 
 fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size_as_string: String) {
-    let size = size_as_string.parse::<f32>();
+    let size = size_as_string.parse::<f32>().unwrap();
     let credentials = Credentials::default();
     let region: Region = region_name.parse().unwrap();
     let bucket = Bucket::new(&bucket_name, region, credentials);
