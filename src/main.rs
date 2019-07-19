@@ -56,7 +56,7 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
 fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size: String) {
     let credentials = Credentials::default();
     let region: Region = region_name.parse().unwrap();
-    let bucket = Bucket::new(bucket_name.parse(), region, credentials);
+    let bucket = Bucket::new(&bucket_name, region, credentials);
 
 //    let actual_size = check_size(size, &config);
 
@@ -74,7 +74,7 @@ fn handle_request(config: &Config, bucket_name: String, file_path: String, regio
         .map(|size| {
             let buffer = resize_image(&img, &size).expect("Could not resize image");
 
-            let mut target = source.clone();
+            let mut target = file_path.clone();
             for (rep_key, rep_val) in &config.replacements {
                 target = target.replace(rep_key, rep_val);
             }
