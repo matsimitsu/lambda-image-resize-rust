@@ -71,24 +71,29 @@ fn handle_request(config: &Config, source_url: String, dest_url: String, size_as
     let size = size_as_string.parse::<f32>().unwrap();
 
     let mut source_response = reqwest::get(source_url.as_str()).expect("Failed to download source image");
-    let mut data= [0; 1024 * 1024 * 50]; //50 MB
-    let source_size = source_response.read(&data).unwrap();
-    let img = image::load_from_memory(&data)
+    let mut source_image_buffer= Vec::new();
+    let source_size = source_response.read_to_end(&mut source_image_buffer).unwrap();
+    let img = image::load_from_memory(&source_image_buffer)
         .ok()
         .expect("Opening image failed");
 
 
-    let buffer = resize_image(&img, &size).expect("Could not resize image");
+    let resized_image_buffer = resize_image(&img, &size).expect("Could not resize image");
 
     let mut target = dest_url.clone();
 
     target = format!("{t}-resize-{s}", t=target, s=size);
 
-//    let (_, code) = bucket
-//        .put(&target, &buffer, "image/jpeg")
-//        .expect(&format!("Could not upload object to :{}", &target));
-//    info!("Uploaded: {} with: {}", &target, &code);
-    return target;
+    let client = reqwest::Client::new();
+    let response = client.put(dest_url.as_str()).body(resized_image_buffer).send();
+
+    if response.is_ok() {
+        return target;
+    } else {
+        panic!("Failed to upload to destination");
+    }
+
+
 }
 
 fn resize_image(img: &image::DynamicImage, new_w: &f32) -> Result<Vec<u8>, ImageError> {
