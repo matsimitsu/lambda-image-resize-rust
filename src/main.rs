@@ -70,8 +70,9 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<ApiGatewayProxyRes
 fn handle_request(config: &Config, source_url: String, dest_url: String, size_as_string: String) -> String {
     let size = size_as_string.parse::<f32>().unwrap();
 
-    let mut source_response = reqwest::get(source_url).expect("Failed to download source image");
-    let source_size = source_response.read(data).unwrap();
+    let mut source_response = reqwest::get(source_url.as_str()).expect("Failed to download source image");
+    let mut data= [0; 1024 * 1024 * 50]; //50 MB
+    let source_size = source_response.read(&data).unwrap();
     let img = image::load_from_memory(&data)
         .ok()
         .expect("Opening image failed");
@@ -86,7 +87,7 @@ fn handle_request(config: &Config, source_url: String, dest_url: String, size_as
 //    let (_, code) = bucket
 //        .put(&target, &buffer, "image/jpeg")
 //        .expect(&format!("Could not upload object to :{}", &target));
-    info!("Uploaded: {} with: {}", &target, &code);
+//    info!("Uploaded: {} with: {}", &target, &code);
     return target;
 }
 
