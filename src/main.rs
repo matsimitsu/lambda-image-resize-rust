@@ -29,6 +29,7 @@ use aws_lambda_events::event::apigw::ApiGatewayProxyRequest;
 
 static BUCKET_KEY: &'static str = "bucket";
 static FILE_PATH_KEY: &'static str = "key";
+static REGION_KEY: &'static str = "region";
 
 fn main() -> Result<(), Box<Error>> {
     simple_logger::init_with_level(log::Level::Info)?;
@@ -45,6 +46,7 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
 
     let bucket = api_event.query_string_parameters.get(BUCKET_KEY).ok_or_else(ctx.new_error("NO bucket provided"));
     let file_path = api_event.query_string_parameters.get(FILE_PATH_KEY).ok_or_else(ctx.new_error("NO file key provided"));
+    let region = api_event.query_string_parameters.get(REGION_KEY).ok_or_else(ctx.new_error("NO region provided"));
 
     Ok(())
 }
