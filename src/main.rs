@@ -54,7 +54,8 @@ fn handle_event(event: Value, ctx: lambda::Context) -> Result<(), HandlerError> 
     Ok(())
 }
 
-fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size: String) {
+fn handle_request(config: &Config, bucket_name: String, file_path: String, region_name: String, size_as_string: String) {
+    let size = size_as_string.parse::<f32>();
     let credentials = Credentials::default();
     let region: Region = region_name.parse().unwrap();
     let bucket = Bucket::new(&bucket_name, region, credentials);
@@ -70,23 +71,17 @@ fn handle_request(config: &Config, bucket_name: String, file_path: String, regio
         .ok()
         .expect("Opening image failed");
 
-    let _: Vec<_> = config
-        .sizes
-        .par_iter()
-        .map(|size| {
-            let buffer = resize_image(&img, &size).expect("Could not resize image");
 
-            let mut target = file_path.clone();
-            for (rep_key, rep_val) in &config.replacements {
-                target = target.replace(rep_key, rep_val);
-            }
-            target = format!("{t}-resize-{s}", t=target, s=size);
-            let (_, code) = bucket
-                .put(&target, &buffer, "image/jpeg")
-                .expect(&format!("Could not upload object to :{}", &target));
-            info!("Uploaded: {} with: {}", &target, &code);
-        })
-        .collect();
+    let buffer = resize_image(&img, &size).expect("Could not resize image");
+
+    let mut target = file_path.clone();
+
+    target = format!("{t}-resize-{s}", t=target, s=size);
+
+    let (_, code) = bucket
+        .put(&target, &buffer, "image/jpeg")
+        .expect(&format!("Could not upload object to :{}", &target));
+    info!("Uploaded: {} with: {}", &target, &code);
 }
 
 fn resize_image(img: &image::DynamicImage, new_w: &f32) -> Result<Vec<u8>, ImageError> {
